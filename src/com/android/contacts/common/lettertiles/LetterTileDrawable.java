@@ -70,9 +70,7 @@ public class LetterTileDrawable extends Drawable {
     private int mContactType = TYPE_DEFAULT;
     private float mScale = 1.0f;
     private float mOffset = 0.0f;
-
-    /** This should match the total number of colors defined in colors.xml for letter_tile_color */
-    private static final int NUM_OF_TILE_COLORS = 8;
+    private boolean mIsCircle = false;
 
     public LetterTileDrawable(final Resources res) {
         mPaint = new Paint();
@@ -85,9 +83,9 @@ public class LetterTileDrawable extends Drawable {
             sTileFontColor = res.getColor(R.color.letter_tile_font_color);
             sLetterToTileRatio = res.getFraction(R.dimen.letter_to_tile_ratio, 1, 1);
             DEFAULT_PERSON_AVATAR = BitmapFactory.decodeResource(res,
-                    R.drawable.ic_list_item_avatar);
+                    R.drawable.ic_person_white_120dp);
             DEFAULT_BUSINESS_AVATAR = BitmapFactory.decodeResource(res,
-                    R.drawable.ic_list_item_businessavatar);
+                    R.drawable.ic_business_white_120dp);
             DEFAULT_VOICEMAIL_AVATAR = BitmapFactory.decodeResource(res,
                     R.drawable.ic_voicemail_avatar);
             sPaint.setTypeface(Typeface.create(
@@ -135,7 +133,14 @@ public class LetterTileDrawable extends Drawable {
         sPaint.setColor(pickColor(mIdentifier));
 
         sPaint.setAlpha(mPaint.getAlpha());
-        canvas.drawRect(getBounds(), sPaint);
+        final Rect bounds = getBounds();
+        final int minDimension = Math.min(bounds.width(), bounds.height());
+
+        if (mIsCircle) {
+            canvas.drawCircle(bounds.centerX(), bounds.centerY(), minDimension / 2, sPaint);
+        } else {
+            canvas.drawRect(bounds, sPaint);
+        }
 
         // Draw letter/digit only if the first character is an english letter
         if (mDisplayName != null && isEnglishLetter(mDisplayName.charAt(0))) {
@@ -143,12 +148,10 @@ public class LetterTileDrawable extends Drawable {
             sFirstChar[0] = Character.toUpperCase(mDisplayName.charAt(0));
 
             // Scale text by canvas bounds and user selected scaling factor
-            final int minDimension = Math.min(getBounds().width(), getBounds().height());
             sPaint.setTextSize(mScale * sLetterToTileRatio * minDimension);
             //sPaint.setTextSize(sTileLetterFontSize);
             sPaint.getTextBounds(sFirstChar, 0, 1, sRect);
             sPaint.setColor(sTileFontColor);
-            final Rect bounds = getBounds();
 
             // Draw the letter in the canvas, vertically shifted up or down by the user-defined
             // offset
@@ -159,8 +162,12 @@ public class LetterTileDrawable extends Drawable {
             // Draw the default image if there is no letter/digit to be drawn
             final Bitmap bitmap = getBitmapForContactType(mContactType);
             drawBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(),
-                        canvas);
+                    canvas);
         }
+    }
+
+    public int getColor() {
+        return pickColor(mIdentifier);
     }
 
     /**
@@ -173,7 +180,7 @@ public class LetterTileDrawable extends Drawable {
         // String.hashCode() implementation is not supposed to change across java versions, so
         // this should guarantee the same email address always maps to the same color.
         // The email should already have been normalized by the ContactRequest.
-        final int color = Math.abs(identifier.hashCode()) % NUM_OF_TILE_COLORS;
+        final int color = Math.abs(identifier.hashCode()) % sColors.length();
         return sColors.getColor(color, sDefaultColor);
     }
 
@@ -243,5 +250,9 @@ public class LetterTileDrawable extends Drawable {
 
     public void setContactType(int contactType) {
         mContactType = contactType;
+    }
+
+    public void setIsCircular(boolean isCircle) {
+        mIsCircle = isCircle;
     }
 }
