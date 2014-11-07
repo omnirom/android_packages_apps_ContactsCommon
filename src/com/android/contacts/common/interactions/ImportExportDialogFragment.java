@@ -114,7 +114,7 @@ public class ImportExportDialogFragment extends AnalyticsDialogFragment
         if (manager != null && manager.hasIccCard()
                 && res.getBoolean(R.bool.config_allow_sim_export)) {
             adapter.add(R.string.export_to_sim);
-
+        }
         if (manager != null && manager.hasIccCard()
                 && res.getBoolean(R.bool.config_allow_sim_import)) {
             adapter.add(R.string.import_from_sim);
