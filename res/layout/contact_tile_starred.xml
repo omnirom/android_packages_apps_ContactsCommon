@@ -38,7 +38,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
         </view>
-	<!-- exposed textcolor for theming -->
+        <!-- exposed textcolor for theming -->
         <TextView
             android:id="@+id/contact_tile_name"
             android:layout_width="match_parent"
