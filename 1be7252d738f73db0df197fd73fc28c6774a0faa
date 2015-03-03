@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6b22818b_3d819aff",
+        "filename": "res/values/styles.xml",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1000008
+      },
+      "writtenOn": "2015-03-03T22:07:03Z",
+      "side": 1,
+      "message": "It appears not to be used.",
+      "parentUuid": "6b22818b_87f6bd58",
+      "revId": "1be7252d738f73db0df197fd73fc28c6774a0faa",
+      "serverId": "56841c99-7c94-43d4-bf0b-cb4707e66d55",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6b22818b_67538170",
         "filename": "res/values/styles.xml",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2015-02-27T21:28:24Z",
       "side": 1,
       "message": "This doesn\u0027t look right - Brian, what\u0027s going on here?\n\nIntentional or typo?  I\u0027m assuming you wanted to expose this but forgot?",
+      "revId": "1be7252d738f73db0df197fd73fc28c6774a0faa",
+      "serverId": "56841c99-7c94-43d4-bf0b-cb4707e66d55",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6b22818b_5d7e5614",
+        "filename": "res/values/styles.xml",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1000008
+      },
+      "writtenOn": "2015-03-03T22:07:03Z",
+      "side": 1,
+      "message": "Brian says this is a typo, so we\u0027ll expose it.",
+      "parentUuid": "6b22818b_67538170",
       "revId": "1be7252d738f73db0df197fd73fc28c6774a0faa",
       "serverId": "56841c99-7c94-43d4-bf0b-cb4707e66d55",
       "unresolved": false
