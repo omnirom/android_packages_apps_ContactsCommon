@@ -24,11 +24,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
-import android.os.ResultReceiver;
 import android.preference.PreferenceManager;
+import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
 import android.telecom.TelecomManager;
 import android.text.Editable;
@@ -39,7 +36,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -51,9 +47,13 @@ import android.widget.TextView;
 import com.android.contacts.common.CallUtil;
 import com.android.contacts.common.ContactPhotoManager;
 import com.android.contacts.common.R;
+import com.android.contacts.common.compat.CompatUtils;
+import com.android.contacts.common.compat.PhoneAccountSdkCompat;
+import com.android.contacts.common.compat.telecom.TelecomManagerCompat;
 import com.android.contacts.common.util.UriUtils;
 import com.android.phone.common.animation.AnimUtils;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -85,6 +85,7 @@ public class CallSubjectDialog extends Activity {
     public static final String ARG_PHONE_ACCOUNT_HANDLE = "PHONE_ACCOUNT_HANDLE";
 
     private int mAnimationDuration;
+    private Charset mMessageEncoding;
     private View mBackgroundView;
     private View mDialogView;
     private QuickContactBadge mContactPhoto;
@@ -162,9 +163,10 @@ public class CallSubjectDialog extends Activity {
             Intent intent = CallUtil.getCallWithSubjectIntent(mNumber, mPhoneAccountHandle,
                     subject);
 
-            final TelecomManager tm =
-                    (TelecomManager) getSystemService(Context.TELECOM_SERVICE);
-            tm.placeCall(intent.getData(), intent.getExtras());
+            TelecomManagerCompat.placeCall(
+                    CallSubjectDialog.this,
+                    (TelecomManager) getSystemService(Context.TELECOM_SERVICE),
+                    intent);
 
             mSubjectHistory.add(subject);
             saveSubjectHistory(mSubjectHistory);
@@ -200,7 +202,7 @@ public class CallSubjectDialog extends Activity {
             };
 
     /**
-     * Show the call subhect dialog given a phone number to dial (e.g. from the dialpad).
+     * Show the call subject dialog given a phone number to dial (e.g. from the dialpad).
      *
      * @param activity The activity.
      * @param number The number to dial.
@@ -277,6 +279,7 @@ public class CallSubjectDialog extends Activity {
         mPhotoSize = getResources().getDimensionPixelSize(
                 R.dimen.call_subject_dialog_contact_photo_size);
         readArguments();
+        loadConfiguration();
         mSubjectHistory = loadSubjectHistory(mPrefs);
 
         setContentView(R.layout.dialog_call_subject);
@@ -353,7 +356,17 @@ public class CallSubjectDialog extends Activity {
      * exceeded.
      */
     private void updateCharacterLimit() {
-        int length = mCallSubjectView.length();
+        String subjectText = mCallSubjectView.getText().toString();
+        final int length;
+
+        // If a message encoding is specified, use that to count bytes in the message.
+        if (mMessageEncoding != null) {
+            length = subjectText.getBytes(mMessageEncoding).length;
+        } else {
+            // No message encoding specified, so just count characters entered.
+            length = subjectText.length();
+        }
+
         mCharacterLimitView.setText(
                 getString(R.string.call_subject_limit, length, mLimit));
         if (length >= mLimit) {
@@ -377,7 +390,9 @@ public class CallSubjectDialog extends Activity {
     private void setPhoto(long photoId, Uri photoUri, Uri contactUri, String displayName,
             boolean isBusiness) {
         mContactPhoto.assignContactUri(contactUri);
-        mContactPhoto.setOverlay(null);
+        if (CompatUtils.isLollipopCompatible()) {
+            mContactPhoto.setOverlay(null);
+        }
 
         int contactType;
         if (isBusiness) {
@@ -557,5 +572,52 @@ public class CallSubjectDialog extends Activity {
                     }
                 }
         );
+    }
+
+    /**
+     * Loads the message encoding and maximum message length from the phone account extras for the
+     * current phone account.
+     */
+    private void loadConfiguration() {
+        // Only attempt to load configuration from the phone account extras if the SDK is N or
+        // later.  If we've got a prior SDK the default encoding and message length will suffice.
+        int sdk = android.os.Build.VERSION.SDK_INT;
+        if(sdk <= android.os.Build.VERSION_CODES.M) {
+            return;
+        }
+
+        if (mPhoneAccountHandle == null) {
+            return;
+        }
+
+        TelecomManager telecomManager =
+                (TelecomManager) getSystemService(Context.TELECOM_SERVICE);
+        final PhoneAccount account = telecomManager.getPhoneAccount(mPhoneAccountHandle);
+
+        Bundle phoneAccountExtras = PhoneAccountSdkCompat.getExtras(account);
+        if (phoneAccountExtras == null) {
+            return;
+        }
+
+        // Get limit, if provided; otherwise default to existing value.
+        mLimit = phoneAccountExtras
+                .getInt(PhoneAccountSdkCompat.EXTRA_CALL_SUBJECT_MAX_LENGTH, mLimit);
+
+        // Get charset; default to none (e.g. count characters 1:1).
+        String charsetName = phoneAccountExtras.getString(
+                PhoneAccountSdkCompat.EXTRA_CALL_SUBJECT_CHARACTER_ENCODING);
+
+        if (!TextUtils.isEmpty(charsetName)) {
+            try {
+                mMessageEncoding = Charset.forName(charsetName);
+            } catch (java.nio.charset.UnsupportedCharsetException uce) {
+                // Character set was invalid; log warning and fallback to none.
+                Log.w(TAG, "Invalid charset: " + charsetName);
+                mMessageEncoding = null;
+            }
+        } else {
+            // No character set specified, so count characters 1:1.
+            mMessageEncoding = null;
+        }
     }
 }
