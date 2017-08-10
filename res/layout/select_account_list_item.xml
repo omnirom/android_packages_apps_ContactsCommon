@@ -37,12 +37,13 @@
               android:orientation="vertical" >
          <TextView android:id="@+id/label"
                    android:textAppearance="?android:attr/textAppearanceMedium"
-                   android:textColor="@color/dialtacts_primary_text_color"
+                   android:textColor="?android:attr/textColorPrimary"
                    android:includeFontPadding="false"
                    android:layout_width="match_parent"
                    android:layout_height="wrap_content" />
          <TextView android:id="@+id/number"
                    android:textAppearance="?android:attr/textAppearanceSmall"
+                   android:textColor="?android:attr/textColorPrimary"
                    android:includeFontPadding="false"
                    android:layout_width="match_parent"
                    android:layout_height="wrap_content"
